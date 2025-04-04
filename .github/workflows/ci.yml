@@ -32,6 +32,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: JUnitTestResults
-          path: **/test-results.xml
-
-
+          path: "**/test-results.xml"
