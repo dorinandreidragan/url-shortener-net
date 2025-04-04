@@ -1,57 +1,93 @@
-# Url Shortener with .NET
+# URL Shortener - **url-shortener-net**
 
 ![Build Status](https://github.com/dorinandreidragan/url-shortener-net/actions/workflows/ci.yml/badge.svg)
 
-## Setup
+Welcome to the **URL Shortener** project! This repository is part of the **Nuts and Bolts of System Design** series. It showcases the iterative development of a scalable and reliable URL shortener system, built using **C# .NET Minimal Web API**.
 
-```bash
-dotnet new sln --name UrlShortener
+## 🚀 About the Project
 
-mkdir src tests
-dotnet new web -o src/UrlShortener.WebApi
-dotnet new xunit -o tests/UrlShortener.WebApi.Tests
+The **URL Shortener** is a practical example to explore **system design principles**. It starts as a simple single-server solution and evolves to tackle scalability, reliability, and performance challenges.
 
-dotnet sln add src/UrlShortener.WebApi
-dotnet sln add tests/UrlShortener.WebApi.Tests
+### Key Features
 
-dotnet add tests/UrlShortener.WebApi.Tests package FluentAssertions
-dotnet add tests/UrlShortener.WebApi.Tests package Microsoft.AspNetCore.Mvc.Testing
-```
+- **URL Shortening**: Convert long URLs into short, easily shareable links.
+- **Redirection**: Seamless redirect from the shortened URL to the original one.
+- **Hands-On Iterative Process**: The project evolves incrementally, solving challenges step-by-step.
 
-## Create API testing UI with Swagger
+## 🎯 Functional Requirements
 
-```bash
-cd UrlShortener.WebApi
-dotnet add UrlShortener.WebApi.csproj package NSwag.AspNetCore
-```
+1. **Shorten a URL**: Convert `https://example.com/long-url` into `https://short.ly/abc123`.
+2. **Redirect**: Access `https://short.ly/abc123` redirects to the original URL.
 
-## Configure Swagger middleware
+## 💡 Non-Functional Requirements
 
-Add these lines of code `Program.cs` right before and after the initialization `var app = builder.Build()`:
+1. **Low latency**: Fast redirection ⚡.
+2. **Scalability**: Designed to handle millions of requests 📈.
+3. **Reliability**: Prevent downtime and broken links 🔗.
 
-```csharp
-// new code
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApiDocument(config =>
-{
-    config.DocumentName = "UrlShortener";
-    config.Title = "Url Shortener";
-    config.Version = "v1";
-});
+## 🔧 Hands-On Iterative Process
 
-// existing code
-var app = builder.Build()
+This project is implemented in **rounds**, with each round focusing on new challenges and solutions. The code for each round is maintained in **separate branches** to track iterative progress.
 
-// new code
-if (app.Environment.IsDevelopment())
-{
-    app.UseOpenApi();
-    app.UseSwaggerUi(config =>
-    {
-        config.DocumentTitle = "UrlShortener";
-        config.Path = "/swagger";
-        config.DocumentPath = "/swagger/{documentName}/swagger.json";
-        config.DocExpansion = "list";
-    });
-}
-```
+The first round is already implemented and available on the branch [round-01-the-basics].
+
+### Upcoming Rounds:
+
+- Persistent Storage (SQL/NoSQL databases)
+- Caching Mechanisms
+- Distributed Architecture
+
+---
+
+## 📦 How to Run
+
+### Prerequisites:
+
+- .NET SDK 9.0+
+- Docker (optional, for future containerized versions)
+
+### Installation:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/dorinandreidragan/url-shortener-net.git
+   cd url-shortener-net
+   ```
+
+2. Run the application:
+
+   ```bash
+   dotnet run
+   ```
+
+3. Access endpoints:
+   - **Shorten a URL**: POST `/shorten`
+   - **Redirect**: GET `/{shortKey}`
+
+---
+
+## 📖 Series Outline
+
+This project is part of the **Nuts and Bolts of System Design** series, exploring practical system design examples. Each round introduces refinements to handle real-world challenges.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions to improve functionality, scalability, or add new features! Feel free to fork the repo and create pull requests.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 🌟 Connect
+
+- Share your feedback, suggestions, or challenges via [GitHub Issues](https://github.com/dorinandreidragna/url-shortener-net/issues).
+- Follow the series for updates on upcoming rounds!
+
+[round-01-the-basics]: https://github.com/dorinandreidragan/url-shortener-net/tree/round-01-the-basics
