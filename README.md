@@ -4,21 +4,26 @@
 
 ```bash
 dotnet new sln --name UrlShortener
-dotnet new editorconfig
-dotnet new web --name UrlShortener.WebApi
-dotnet sln add UrlShortener.WebApi
 
-dotnet dev-certs https --trust
+mkdir src tests
+dotnet new web -o src/UrlShortener.WebApi
+dotnet new xunit -o tests/UrlShortener.WebApi.Tests
+
+dotnet sln add src/UrlShortener.WebApi
+dotnet sln add tests/UrlShortener.WebApi.Tests
+
+dotnet add tests/UrlShortener.WebApi.Tests package FluentAssertions
+dotnet add tests/UrlShortener.WebApi.Tests package Microsoft.AspNetCore.Mvc.Testing
 ```
 
-Create API testing UI with Swagger
+## Create API testing UI with Swagger
 
 ```bash
 cd UrlShortener.WebApi
 dotnet add UrlShortener.WebApi.csproj package NSwag.AspNetCore
 ```
 
-Configure Swagger middleware
+## Configure Swagger middleware
 
 Add these lines of code `Program.cs` right before and after the initialization `var app = builder.Build()`:
 
