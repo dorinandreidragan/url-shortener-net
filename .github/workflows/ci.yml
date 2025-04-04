@@ -26,4 +26,12 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test --logger "junit;LogFileName=test-results.xml" --no-build --verbosity normal
+
+      - name: Upload JUnit test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: JUnitTestResults
+          path: **/test-results.xml
+
+
