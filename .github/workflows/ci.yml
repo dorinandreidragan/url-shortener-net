@@ -26,18 +26,18 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests
-        run: dotnet test --logger "junit;LogFileName=test-results.xml" --no-build --verbosity normal
+        run: dotnet test --logger "trx;LogFileName=test-results.trx" --no-build --verbosity normal
 
       - name: Upload JUnit test results
         uses: actions/upload-artifact@v4
         with:
-          name: JUnitTestResults
-          path: "**/test-results.xml"
+          name: TestResults
+          path: "**/test-results.trx"
 
       - name: Report Test Results
         uses: dorny/test-reporter@v2
         with:
-          artifact: JUnitTestResults
+          artifact: TestResults
           name: XUnit Tests
-          path: "**/test-results.xml"
-          reporter: jest-junit
+          path: "**/test-results.trx"
+          reporter: dotnet-trx
