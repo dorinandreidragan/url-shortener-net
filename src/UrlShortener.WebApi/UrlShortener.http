@@ -1,0 +1,10 @@
+@baseUrl = http://localhost:5000
+
+POST {{baseUrl}}/shorten HTTP/1.1
+content-type: application/json
+
+{
+    "originalUrl": "https://en.wikipedia.org/wiki/Systems_design"
+}
+
+###
