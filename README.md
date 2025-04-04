@@ -1,5 +1,7 @@
 # Url Shortener with .NET
 
+![Build Status](https://github.com/dorinandreidragan/url-shortener-net/actions/workflows/ci.yml/badge.svg)
+
 ## Setup
 
 ```bash
