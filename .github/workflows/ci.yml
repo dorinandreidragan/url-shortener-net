@@ -33,3 +33,11 @@ jobs:
         with:
           name: JUnitTestResults
           path: "**/test-results.xml"
+
+      - name: Report Test Results
+        uses: dorny/test-reporter@v2
+        with:
+          artifact: JUnitTestResults
+          name: XUnit Tests
+          path: "**/test-results.xml"
+          reporter: jest-junit
