@@ -14,7 +14,6 @@ dotnet sln add tests/UrlShortener.WebApi.Tests
 
 dotnet add tests/UrlShortener.WebApi.Tests package FluentAssertions
 dotnet add tests/UrlShortener.WebApi.Tests package Microsoft.AspNetCore.Mvc.Testing
-dotnet add tests/UrlShortener.WebApi.Tests package JUnitXml.TestLogger
 ```
 
 ## Create API testing UI with Swagger
