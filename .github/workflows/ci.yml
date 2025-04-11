@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - "feature/**" # Include feature branches
+      - "round-**" # Include round branches
   pull_request:
 
 jobs:
