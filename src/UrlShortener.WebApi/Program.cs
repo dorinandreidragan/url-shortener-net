@@ -18,6 +18,10 @@ var urls = new ConcurrentDictionary<string, string>();
 
 app.MapPost("/shorten", async (UrlShortenRequest request, UrlShortenerDbContext dbContext) =>
 {
+    if (string.IsNullOrEmpty(request.OriginalUrl))
+    {
+        return Results.BadRequest();
+    }
 
     string shortKey;
     var existingMapping = await dbContext.UrlMappings

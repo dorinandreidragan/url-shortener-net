@@ -1,123 +1,51 @@
-﻿using System.Text.Json;
-
-using DotNet.Testcontainers.Builders;
+﻿using System.Net;
+using System.Text.Json;
 
 using FluentAssertions;
 
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using Npgsql;
-
-using Testcontainers.PostgreSql;
-
 using UrlShortener.WebApi.Tests.Extensions;
+using UrlShortener.WebApi.Tests.Factories;
+using UrlShortener.WebApi.Tests.Fixtures;
 
 namespace UrlShortener.WebApi.Tests;
 
-public class PostgreSqlTestContainer : IAsyncLifetime
+[Collection(nameof(IntegrationTestsCollection))]
+public class UrlShortenerTests : IAsyncLifetime
 {
-    public readonly PostgreSqlContainer Container;
+    private readonly CustomWebApplicationFactory factory;
+    private readonly HttpClient client;
+    private readonly string baseUrl;
+    private readonly UrlShortenerDbContext dbContext;
 
-    public PostgreSqlTestContainer()
+    public UrlShortenerTests(PosgreSqlContainerFixture fixture)
     {
-        // Getting and parsing the connection string so that we can configure the container via the
-        // appsettings.Test.json file.
-        var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Test.json", optional: true, reloadOnChange: true)
-            .Build();
+        this.factory = new CustomWebApplicationFactory(fixture.Postgres.GetConnectionString());
+        this.client = this.factory.CreateClient();
+        this.baseUrl = this.client.BaseAddress!.OriginalString;
 
-        var connectionString = config.GetConnectionString("DefaultConnection");
-        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
-
-        this.Container = new PostgreSqlBuilder()
-            .WithImage("postgres:latest")
-            .WithDatabase(connectionStringBuilder.Database)
-            .WithUsername(connectionStringBuilder.Username)
-            .WithPassword(connectionStringBuilder.Password)
-            .WithPortBinding(connectionStringBuilder.Port, true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("pg_isready"))
-            .Build();
+        var scope = this.factory.Services.CreateScope();
+        dbContext = scope.ServiceProvider.GetRequiredService<UrlShortenerDbContext>();
     }
 
     public async Task InitializeAsync()
     {
-        await this.Container.StartAsync();
-
-        var options = new DbContextOptionsBuilder<UrlShortenerDbContext>()
-            .UseNpgsql(this.Container.GetConnectionString())
-            .Options;
-
-        using var context = new UrlShortenerDbContext(options);
-        await context.Database.MigrateAsync();
+        // Make sure that the db is clean every time we run a test
+        // so that the tests run in isolation.
+        dbContext.UrlMappings.RemoveRange(dbContext.UrlMappings);
+        await dbContext.SaveChangesAsync();
     }
 
     public Task DisposeAsync()
     {
-        return this.Container.DisposeAsync().AsTask();
-    }
-}
-
-public sealed class TestsWebApplicationFactory(Action<IServiceCollection> configureServices)
-    : WebApplicationFactory<Program>
-{
-    private readonly Action<IServiceCollection> configureServices = configureServices;
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        base.ConfigureWebHost(builder);
-        builder.ConfigureServices(this.configureServices);
-    }
-}
-
-public static class PostgreSqlServicesConfigurator
-{
-    public static Action<IServiceCollection> Configure()
-    {
-        var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Test.json", optional: true, reloadOnChange: true)
-            .Build();
-
-        var connectionString = config.GetConnectionString("DefaultConnection");
-
-        return services =>
-        {
-            services.AddDbContext<UrlShortenerDbContext>(options =>
-            {
-                options.UseNpgsql(connectionString);
-            });
-        };
-
-    }
-}
-
-public class UrlShortenerTests : IClassFixture<PostgreSqlTestContainer>, IDisposable
-{
-    private readonly WebApplicationFactory<Program> factory;
-    private readonly HttpClient client;
-    private readonly string baseUrl;
-
-    public UrlShortenerTests(PostgreSqlTestContainer fixture)
-    {
-        var services = PostgreSqlServicesConfigurator.Configure();
-        this.factory = new TestsWebApplicationFactory(services);
-        this.client = this.factory.CreateClient();
-        this.baseUrl = this.client.BaseAddress!.OriginalString;
-    }
-
-    public void Dispose()
-    {
+        this.client.Dispose();
         this.factory.Dispose();
-        GC.SuppressFinalize(this);
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public async Task Shorten_Returns_Short_Url()
+    public async Task Shorten_Should_Return_Short_Url_For_Valid_Input()
     {
         var content = new UrlShortenRequest("https://www.example.com").GetHttpContent();
 
@@ -130,7 +58,7 @@ public class UrlShortenerTests : IClassFixture<PostgreSqlTestContainer>, IDispos
     }
 
     [Fact]
-    public async Task Shorten_Returns_Short_Url_When_Called_Twice()
+    public async Task Shorten_Should_Return_Same_Short_Url_When_Called_Twice_With_Same_Input()
     {
         var content = new UrlShortenRequest("https://www.example.com").GetHttpContent();
         await this.client.PostAsync("/shorten", content);
@@ -144,12 +72,20 @@ public class UrlShortenerTests : IClassFixture<PostgreSqlTestContainer>, IDispos
     }
 
     [Fact]
-    public async Task Redirect_Returns_Not_Found_When_Wrong_ShortKey()
+    public async Task Redirect_Should_Return_Not_Found_For_Invalid_ShortKey()
     {
-        var response = await this.client.GetAsync("/invalid_short_key");
+        var response = await this.client.GetAsync(string.Empty);
 
-        response.Should().NotBeNull();
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task Shorten_Returns_BadRequest_For_Invalid_Url()
+    {
+        var content = new UrlShortenRequest(string.Empty).GetHttpContent();
+
+        var response = await this.client.PostAsync("/shorten", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
